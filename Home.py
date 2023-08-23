@@ -4,6 +4,9 @@ from pytube import YouTube
 import whisper
 import numpy as np
 from io import BytesIO
+from transformers import pipeline
+
+asr_model = whisper.load_model('tiny')
 
 st.set_page_config(
     page_title="Home",
@@ -20,9 +23,6 @@ with st.form(key='form_1'):
     
     if url:
     
-        # Open AI's Whisper model
-        asr_model = whisper.load_model('small')
-
         # URL del video seleccionado
         yt = YouTube(url=url)
 
@@ -36,19 +36,31 @@ with st.form(key='form_1'):
 
         st.toast('Audio transcribed!')
 
+
     else:
         st.markdown('or')        
 
 with st.form(key='form_2'):
-    file_uploader = st.file_uploader('Upload your audio file')
+    st.write("Transcribe from uploaded audio")
+    file_uploader = st.file_uploader('Upload your audio file', type=['mp3', 'mp4', 'wav'])
     st.form_submit_button('Transcribe')
 
     if file_uploader:
+        with st.spinner("Transcribing..."):
+            # Guardar el archivo de audio subido temporalmente
+            with open("tmp.mp4", "wb") as f:
+                f.write(file_uploader.read())
+
+            # Realizar la transcripción con Whisper
+            result = asr_model.transcribe("tmp.mp4")
+            transcription = result['text']
+
+        st.write("Transcription:")
+        st.write(transcription)
 
         st.toast('Audio transcribed!')
 
     else:
-
         st.markdown("Supported audio formats:")
         st.markdown("- .mp3")
         st.markdown("- .mp4")
